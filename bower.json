@@ -1,0 +1,15 @@
+{
+  "name": "at-doc-element",
+  "private": true,
+  "version": "1.0.0.11",
+  "dependencies": {
+    "tangere": "TangereJs/tangere#master",
+    "iron-flex-layout": "PolymerElements/iron-flex-layout#master",
+    "at-theme": "TangereJs/at-theme#master",
+    "at-doc-parser": "TangereJs/at-doc-parser#master",
+    "at-core-markdown": "TangereJs/at-core-markdown#master",
+    "at-carbon-tabs": "TangereJs/at-carbon-tabs#master",
+    "at-doc-demo": "TangereJs/at-doc-demo#master",
+    "at-core-activity": "TangereJs/at-core-activity#master"
+  }
+}
