@@ -1,307 +1,360 @@
 <link rel="import" href="../tangere/tangere.html">
-<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../at-theme/at-theme.html">
 <link rel="import" href="../at-doc-parser/at-doc-parser.html">
+
+<link rel="import" href="../at-core-spinner/at-core-spinner.html" />
+<link rel="import" href="../at-carbon-message/at-carbon-message.html" />
 <link rel="import" href="../at-core-markdown/at-core-markdown.html">
-<link rel="import" href="../at-carbon-tabs/at-carbon-tab.html">
-<link rel="import" href="../at-carbon-tabs/at-carbon-tabs.html">
+
 <link rel="import" href="../at-doc-demo/at-doc-demo.html">
 <link rel="import" href="../at-core-activity/at-core-activity.html">
 
 <dom-module id="at-doc-element">
   <template>
     <style>
+       :host {
+        display: block;
+        box-sizing: border-box;
 
-      .doc-container {
         @apply(--paper-font-body1);
         margin: 0 auto;
         max-width: 1400px;
       }
 
-      .header > label {
-        font-weight: 500;
-        font-size: 21px;
+      .row {
+        margin-top: 16px;
       }
 
-      .header > p {
-        margin-left: 8px;
-        font-size: 13px;
+      at-doc-parser {
+        display: block;
+        box-sizing: border-box;
       }
 
-      .doc-container > .section {
+      at-core-markdown {
+        display: block;
+        box-sizing: border-box;
+      }
+
+      at-doc-demo {
+        display: block;
+        box-sizing: border-box;
+      }
+
+      .section {
         margin-top: 13px;
         margin-left: 21px;
         border: 1px solid gray;
         border-bottom: none;
       }
 
-      .section > .title {
+      .section-title {
+        display: block;
+        box-sizing: border-box;
         @apply(--paper-font-headline);
         margin-bottom: 8px;
       }
 
-      .items-container > .item-container:first-child {
+      .item-container:nth-child(2) {
         border-top: 1px solid gray;
         border-bottom: 1px solid gray;
+        @apply(--layout-horizontal);
+        flex-wrap: wrap;
       }
 
-      .items-container > .item-container {
+      .item-container {
         border-bottom: 1px solid gray;
+        @apply(--layout-horizontal);
+        flex-wrap: wrap;
       }
 
-      .signature .name {
+      .property-name {
+        display: block;
+        box-sizing: border-box;
         font-weight: bold;
+        width: 144px;
         margin-left: 13px;
       }
 
-      .item-container > .property.signature {
-        float: left;
-        width: 144px;
+      .property-details {
+        @apply(--layout-flex);
       }
 
-      .item-container.hidden {
-        display: none;
+      .method-signature {
+        display: block;
+        box-sizing: border-box;
+        width: 200px;
+        margin-left: 13px;
       }
 
-      .item-container > .property.details {
-        margin-left: 144px;
-        padding: 0;
+      .method-details {
+        @apply(--layout-flex);
       }
 
-      .item-container > .details {
-        padding-left: 144px;
-      }
-
-      .details p {
-        /*remove semantic.css effect*/
-        margin: 0;
-      }
-
-      .details > .params-return-wrapper {
+      .params-return-wrapper {
         background: rgba(0, 0, 0, 0.05);
       }
 
-
-      .documentation {
-        margin: 32px;
+      .event-summary {
+        width: 100%;
+        @apply(--layout-horizontal);
       }
 
-      .documentation {
-        display: none;
-      }
-
-      .playground {
-        display: none;
-      }
-
-      .readme {
-        display: none;
-      }
-
-      .documentation.selected,
-      .playground.selected,
-      .readme.selected {
+      .event-name {
         display: block;
+        box-sizing: border-box;
+        @apply(--paper-font-body1);
+        font-weight: bold;
+        width: 144px;
+        margin-left: 13px;
       }
 
-      .tab-selector.hidden {
-        display: none;
+      .event-description {
+        @apply(--layout-flex);
       }
 
+      .event-details {
+        margin-left: 144px;
+        @apply(--layout-flex);
+      }
 
-      .header {
+      .header-label {
+        display: block;
+        box-sizing: border-box;
         text-align: center;
+        font-weight: 500;
+        font-size: 21px;
       }
 
     </style>
 
-    <at-doc-parser id="docParser" url="{{url}}"></at-doc-parser>
-    <div class="vertical layout doc-container">
-      <div class="header">
-        <label>{{data.name}}</label>
-        <at-core-markdown text="{{data.description}}" style="text-align: left"></at-core-markdown>
-      </div>
-      <div>
-        <div id="tabSelectorWrapper" class="tab-selector hidden">
-          <at-carbon-tabs id="tabSelector" selected="{{_computeSelected(readme)}}" attr-for-selected="data-name">
-            <at-carbon-tab data-name="readme" hidden$={{!readme}}>Overview</at-carbon-tab>
-            <at-carbon-tab data-name="documentation">API Reference</at-carbon-tab>
-            <at-carbon-tab data-name="playground">Playground</at-carbon-tab>
-          </at-carbon-tabs>
+    <at-doc-parser id="docParser" url="[[url]]" on-value-changed="_handleDocParserValueChanged"></at-doc-parser>
+
+    <div class="row">
+      <at-core-spinner id="readmeSpinner"></at-core-spinner>
+      <at-carbon-message id="readmeMessage" type="info"></at-carbon-message>
+      <at-core-markdown id="markdownReadme"></at-core-markdown>
+    </div>
+
+    <div class="row">
+      <at-core-spinner id="playgroundSpinner"></at-core-spinner>
+      <at-carbon-message id="playgroundMessage" type="info"></at-carbon-message>
+      <at-doc-demo id="atDocDemo" url=[[url]]></at-doc-demo>
+    </div>
+
+    <div class="row">
+      <template is="dom-if" if="{{_parserData.properties.length}}">
+        <div class="section">
+          <label class="section-title">Properties</label>
+          <template is="dom-repeat" items="{{_parserData.properties}}">
+            <div class="item-container" hidden$="[[item.private]]">
+              <div class="property-name">{{item.name}}</div>
+              <div class="property-details">
+                <div class="params-return-wrapper">
+                  <div>Type: <span>{{item.type}}</span></div>
+                  <div>Default: <span>{{item.default}}</span></div>
+                  <template is="dom-if" if="{{item.possibleValues}}">
+                    <div>Possible values: <span>{{item.possibleValues}}</span></div>
+                  </template>
+                </div>
+                <at-core-markdown class="item-description" text="{{item.description}}"></at-core-markdown>
+              </div>
+            </div>
+          </template>
         </div>
-      </div>
-      <div id="readme" class="readme">
-        <at-core-markdown id="markdownReadme">
-          <div class="markdown-html">This is sparta!!!</div>
-        </at-core-markdown>
-      </div>
-      <div id="documentation" class="documentation">
-        <template is="dom-if" if="{{data.properties.length}}">
-          <div class="vertical layout section">
-            <label class="title">Properties</label>
-            <div class="vertical layout items-container">
-              <template is="dom-repeat" items="{{data.properties}}">
-                <div class="item-container" hidden$="[[item.private]]">
-                  <div class="horizontal layout property signature">
-                    <span class="name">{{item.name}}</span>
-                  </div>
-                  <div class="vertical layout property details">
-                    <div class="params-return-wrapper">
-                      <p>Type:
-                        <span class="param-type">{{item.type}}</span>
-                      </p>
-                      <p>Default:
-                        <span>{{item.default}}</span>
-                      </p>
-                      <template is="dom-if" if="{{item.possibleValues}}">
-                        <p>
-                          Possible values:
-                          <span>{{item.possibleValues}}</span>
-                        </p>
-                      </template>
+      </template>
+
+      <template is="dom-if" if="{{_parserData.methods.length}}">
+        <div class="section">
+          <label class="section-title">Methods</label>
+          <template is="dom-repeat" items="{{_parserData.methods}}">
+            <div class="item-container" hidden$="[[item.private]]">
+              <div class="method-signature">
+                <span class="name">{{item.name}}</span>
+                <span>(</span>
+                <template is="dom-if" if="{{item.params}}">
+                  <span class="param-list">[[_computeParamList(item.params)]]</span>
+                </template>
+                <span>)</span>
+                <template is="dom-if" if="{{item.return}}">
+                  <span>➙ {</span>
+                  <span class="return-type">{{item.return.type}}</span>
+                  <span>}</span>
+                </template>
+              </div>
+              <div class="method-details">
+                <div class="params-return-wrapper">
+                  <template is="dom-repeat" items="{{item.params}}" as="param">
+                    <div>
+                      <span class="param-name">{{param.name}}</span>
+                      <span>{</span>
+                      <span class="param-type">{{param.type}}</span>
+                      <span>}</span>
+                      <at-core-markdown class="param-description" text="{{param.description}}"></at-core-markdown>
                     </div>
-                    <at-core-markdown class="item-description" text="{{item.description}}">
-                      <div class="markdown-html"></div>
-                    </at-core-markdown>
-                  </div>
+                  </template>
+                  <template is="dom-if" if="{{item.return}}">
+                    <div>
+                      <span>Returns {</span>
+                      <span class="return-type">{{item.return.type}}</span>
+                      <span>}</span>
+                      <at-core-markdown class="return-description">{{item.return.description}}</at-core-markdown>
+                    </div>
+                  </template>
                 </div>
-              </template>
+                <at-core-markdown class="item-description" text="{{item.description}}"></at-core-markdown>
+              </div>
             </div>
-          </div>
-        </template>
-        <template is="dom-if" if="{{data.methods.length}}">
-          <div class="vertical layout section">
-            <label class="title">Methods</label>
-            <div class="vertical layout items-container">
-              <template is="dom-repeat" items="{{data.methods}}">
-                <div class="item-container" hidden$="[[item.private]]">
-                  <div class="horizontal layout signature">
-                    <p>
-                      <span class="name">{{item.name}}</span>
-                      <span>(</span>
-                      <template is="dom-if" if="{{item.params}}">
-                        <span class="param-list">[[_computeParamList(item.params)]]</span>
-                      </template>
-                      <span>)</span>
-                      <template is="dom-if" if="{{item.return}}">
-                        <span>➙ {</span>
-                        <span class="return-type">{{item.return.type}}</span>
-                        <span>}</span>
-                      </template>
-                    </p>
-                  </div>
-                  <div class="vertical layout details">
+          </template>
+        </div>
+      </template>
+
+      <template is="dom-if" if="{{_parserData.events.length}}">
+        <div class="section">
+          <label class="section-title">Events</label>
+          <template is="dom-repeat" items="{{_parserData.events}}">
+            <div class="item-container">
+              <div class="event-summary">
+                <div class="event-name">{{item.name}}</div>
+                <at-core-markdown class="event-description" text="{{item.description}}"></at-core-markdown>
+              </div>
+              <template is="dom-if" if="{{item.params}}">
+                <div class="event-details">
+                  <template is="dom-repeat" items="{{item.params}}" as="param">
                     <div class="params-return-wrapper">
-                      <template is="dom-repeat" items="{{item.params}}" as="param">
-                        <p>
-                          <span class="param-name">{{param.name}}</span>
-                          <span>{</span>
-                          <span class="param-type">{{param.type}}</span>
-                          <span>}</span>
-                          <at-core-markdown class="param-description" text="{{param.description}}">
-                            <div class="markdown-html"></div>
-                          </at-core-markdown>
-                        </p>
-                      </template>
-                      <template is="dom-if" if="{{item.return}}">
-                        <p>
-                          <span>Returns {</span>
-                          <span class="return-type">{{item.return.type}}</span>
-                          <span>}</span>
-                          <at-core-markdown class="return-description">{{item.return.description}}</at-core-markdown>
-                        </p>
-                      </template>
+                      <span class="param-name">{{param.name}}</span>
+                      <span>{</span>
+                      <span class="param-type">{{param.type}}</span>
+                      <span>}</span>
                     </div>
-                    <at-core-markdown class="item-description" text="{{item.description}}">
-                      <div class="markdown-html"></div>
-                    </at-core-markdown>
-                  </div>
-                </div>
-              </template>
-            </div>
-          </div>
-        </template>
-        <template is="dom-if" if="{{data.events.length}}">
-          <div class="vertical layout section">
-            <label class="title">Events</label>
-            <div class="vertical layout items-container">
-              <template is="dom-repeat" items="{{data.events}}">
-                <div class="vertical layout item-container">
-                  <div class="horizontal layout item">
-                    <div class="flex-2 signature">
-                      <label class="name">{{item.name}}</label>
-                    </div>
-                    <div class="flex-10 details">
-                      <at-core-markdown class="item-description" text="{{item.description}}">
-                        <div class="markdown-html"></div>
-                      </at-core-markdown>
-                    </div>
-                  </div>
-                  <template is="dom-if" if="{{item.params}}">
-                    <div class="details">
-                      <template is="dom-repeat" items="{{item.params}}" as="param">
-                        <div class="params-return-wrapper">
-                          <p>
-                            <span class="param-name">{{param.name}}</span>
-                            <span>{</span>
-                            <span class="param-type">{{param.type}}</span>
-                            <span>}</span>
-                          </p>
-                        </div>
-                        <at-core-markdown class="param-description" text="{{param.description}}">
-                          <div class="markdown-html"></div>
-                        </at-core-markdown>
-                      </template>
-                    </div>
+                    <at-core-markdown class="param-description" text="{{param.description}}"></at-core-markdown>
                   </template>
                 </div>
               </template>
             </div>
-          </div>
-        </template>
-      </div>
-      <div id="playground" class="playground">
-        <at-doc-demo id="atDocDemo" url={{url}} hide="true"></at-doc-demo>
-      </div>
+          </template>
+        </div>
+      </template>
     </div>
+
+    <div class="row">
+      <label class="header-label">{{_parserData.name}}</label>
+      <at-core-markdown text="{{_parserData.description}}"></at-core-markdown>
+    </div>
+
   </template>
   <script>
     'use strict';
     Polymer({
       is: 'at-doc-element',
       properties: {
+
+        /**
+         * Url to fetch the element from. Details for specified element will be displayed 
+         * 
+         * @property url
+         * @type String
+         * @default  ''
+         */
         url: {
           type: String,
           value: ''
         },
+
+        /**
+         * When true, url will be automatically generated
+         * 
+         * @property auto
+         * @type Boolean
+         * @default  false
+         */
         auto: {
           type: Boolean,
           value: false
         },
 
         /**
-         * readme - if true, readme.md file will be read and displayed in a separate tab
-         * @property readme
-         * @type Boolean
-         * @default false
+         * Holds the data from the parser
+         * 
+         * @property _parserData
+         * @type Object
+         * @default {} 
          */
-        readme: {
-          type: Boolean,
-          value: false
+        _parserData: {
+          type: Object,
+          value: function() {
+            return {};
+          }
         }
       },
-      ready: function() {
-        var docParser = this.$.docParser;
-        var self = this;
-        var elementName;
 
-        docParser.addEventListener('value-changed', function(event) {
-          if (docParser.value.length > 0) {
-            var value = docParser.value[0];
-            self.data = value;
-          }
+      observers: [
+        '_importElementFromUrl(url, auto)'
+      ],
+
+      // rendering helper
+      _computeParamList: function(params) {
+        var result = [];
+        params.forEach(function(param, index) {
+          result.push(param.name);
         });
-        if (this.auto && this.url === '') {
+        result = result.join(", ");
+        return result;
+      },
+
+      ready: function() {
+
+        this._downloadReadmeFile();
+
+        var self = this;
+        // reset resize sensor for at-doc-demo
+        this.$.atDocDemo.$.coreForm.$.propForm.addEventListener('rendered', function() {
+          self.$.atDocDemo.resetResizeSensor();
+        });
+      },
+
+      _downloadReadmeFile: function() {
+        var self = this;
+        
+        var pathParts = window.location.pathname.split("/");
+        pathParts[pathParts.length - 1] = "README.md";
+        var path = pathParts.join("/");
+        var readmeDownloadUrl = [window.location.origin, path].join("");
+        
+        if (this.url !== "") {
+          var urlParts = this.url.split("/");
+          urlParts[urlParts.length - 1] = "README.md";
+          var readmeDownloadUrl = urlParts.join("/");
+        }
+
+        var markdownReadme = self.$.markdownReadme;
+        var readmeDownloadLink = document.createElement('at-core-activity');
+        readmeDownloadLink.handleAs = "text";
+        
+        readmeDownloadLink.addEventListener('response', function(event) {
+          var httpStatus = event.currentTarget.activeRequests[0].xhr.status;
+          if (httpStatus === 404) {
+            self.$.readmeMessage.html = "Readme not found";
+            self.$.readmeSpinner.display = 'none';
+            return;
+          }
+          var value = event.detail;
+          markdownReadme.text = value;
+          self.$.readmeSpinner.display = 'none';
+        });
+        
+        readmeDownloadLink.addEventListener('error', function(event) {
+          console.log(event.detail);
+        });
+        
+        readmeDownloadLink.url = readmeDownloadUrl;
+        readmeDownloadLink.generateRequest();
+      },
+
+      _importElementFromUrl: function(url, auto) {
+        var elementName;
+        var elementHref = url;
+        
+        if (auto && url === '') {
           // autogenerate the url
           // #761 at-doc-element?element=a-b
           // code below handles #761
@@ -312,12 +365,14 @@
             var i;
             var len = paramsParts.length;
             var paramPart;
+            
             for (i = 0; i < len; i++) {
               paramPart = paramsParts[i];
               if (paramPart.startsWith('element=')) {
                 break;
               }
             }
+            
             if (paramPart.indexOf('=') !== -1) {
               var namePart = paramPart.split('=')[1];
               var result = '';
@@ -326,7 +381,7 @@
               } else {
                 result = namePart + '.html';
               }
-              self.url = '../' + result;
+              elementHref = '../' + result;
             }
             // end of #761 handle
             // debugger;
@@ -336,138 +391,79 @@
               var urlParts = url.split("/");
               if (urlParts.length > 2) {
                 var componentName = urlParts[urlParts.length - 2];
-                self.url = componentName + '.html';
+                elementHref = componentName + '.html';
               }
             }
           }
           elementName = componentName || namePart;
-        } else if (this.url !== ""){
-          var nameParts = this.url.split("/");
-          elementName = nameParts[nameParts.length-1];
+        
+          this.$.docParser.url = elementHref;
+          this.$.atDocDemo.url = elementHref;
+
+        } else if (url !== "") {
+          var nameParts = url.split("/");
+          elementName = nameParts[nameParts.length - 1];
           if (elementName.indexOf('.html') > -1) {
             elementName = elementName.replace('.html', '');
           }
         }
 
-        var alreadyImported = Polymer.telemetry.registrations.find(function (element, index) {
-          return element.is === elementName;
-        });
+        var alreadyImported = this._findRegistration(elementName);
+
+        var self = this;
         if (!alreadyImported) {
-          self.importHref(self.url, function (event) {
-            var registration = Polymer.telemetry.registrations.find(function (element, index) {
-              return element.is === elementName;
-            });
+          self.importHref(elementHref, function(event) {
+            var registration = self._findRegistration(elementName);
             self._processImportedElement(registration);
+
           }, function(error) {
             console.log(error);
+
           }, true);
+
         } else {
           self._processImportedElement(alreadyImported);
         }
-
-        var pathParts = window.location.pathname.split("/");
-        pathParts[pathParts.length-1] = "README.md";
-        var path = pathParts.join("/");
-        var readmeDownloadUrl = [window.location.origin, path].join("");
-
-        if (this.url !== "") {
-          var urlParts = this.url.split("/");
-          urlParts[urlParts.length-1] = "README.md";
-          var readmeDownloadUrl = urlParts.join("/");
-        }
-
-        var markdownReadme = self.$.markdownReadme;
-        var readmeDownloadLink = document.createElement('at-core-activity');
-        readmeDownloadLink.handleAs="text";
-        readmeDownloadLink.addEventListener('response', function(event) {
-          var value = event.detail;
-          markdownReadme.text = value;
-        });
-        readmeDownloadLink.addEventListener('error', function(event) {
-          console.log(event.detail);
-        });
-        readmeDownloadLink.url = readmeDownloadUrl;
-        readmeDownloadLink.generateRequest();
-
-        this.addEventListener('dom-change', function(event) {
-          self.debounce('debounce dom change', function () {
-            var tabSelector = self.$.tabSelector;
-            var selectedTab = Polymer.dom(tabSelector).querySelector('.iron-selected');
-            if (selectedTab) {
-              tabSelector._tabChanged(selectedTab);
-            }
-            console.log('dom change');
-          }, 50);
-        });
       },
 
-      _processImportedElement: function (registration) {
+      _findRegistration: function(elementName) {
+        var registration;
+        var registrations = Polymer.telemetry.registrations;
+        var registrationsLength = registrations.length;
+        
+        for (var i = 0; i < registrationsLength; i++) {
+          registration = registrations[i];
+          if (registration.is === elementName) return registration;
+        }
+
+        return false;
+      },
+
+      _processImportedElement: function(registration) {
         var playground = true;
+        
         if (registration.$meta && registration.$meta.length > 0) {
           var metaEntry = registration.$meta[0];
-
           if (metaEntry.hasOwnProperty('playground')) {
             playground = Boolean(metaEntry.playground);
           }
         }
-
-        if (!playground) {
-          var playgroundTab = this.$.tabSelector.querySelector('[data-name=playground]');
-          playgroundTab.setAttribute('hidden', true);
+        
+        if (playground) {
+          this.$.playgroundSpinner.display = "none";
+        } else {
+          Polymer.dom(this.$.atDocDemo).setAttribute('hidden', 'true');
+          this.$.playgroundSpinner.display = "none";
+          this.$.playgroundMessage.html = "Playground is disabled for this element.";
         }
-
-        this.playgroundChanged(playground);
       },
 
-      playgroundChanged: function(newValue, oldValue) {
-        var self = this;
-        var tabSelector = this.$.tabSelector;
-        var readmeDiv = this.$.readme;
-        var documentationDiv = this.$.documentation;
-        var playgroundDiv = this.$.playground;
-        var tabSelectorWrapper = this.$.tabSelectorWrapper;
-
-        function handleTabChanged(tabName) {
-          updateDivClasses(tabName);
-
-          self.debounce('resetResizeSensor', function(event) {
-            self.$.atDocDemo.resetResizeSensor();
-            self.$.atDocDemo.hide = tabName !== 'playground';            
-          }, 100);
-        }
-
-        function updateDivClasses(tabName) {
-          self.toggleClass('selected', tabName === 'playground', playgroundDiv);
-          self.toggleClass('selected', tabName === 'documentation', documentationDiv);
-          self.toggleClass('selected', tabName === 'readme', readmeDiv);
-        }
-
-        self.toggleClass('hidden', !newValue && !this.readme, tabSelectorWrapper);
-
-        tabSelector.addEventListener('tab-changed', function(event) {
-          var value = event.detail.value;
-          handleTabChanged(value.currentTab);
-        });
-
-        updateDivClasses(tabSelector.selected);
-      },
-
-      _computeParamList: function(params) {
-        var
-          result = [];
-        params.forEach(function(param, index) {
-          result.push(param.name);
-        });
-        result = result.join(", ");
-        return result;
-      },
-
-      // the most left tab should be selected by default
-      // _computeSelected returns readme if readme is set to true because readme is the most left tab
-      // if readme is set to false documentation is the most left tab
-      _computeSelected: function (readme) {
-        return readme ? "readme" : "documentation";
+      _handleDocParserValueChanged: function(event) {
+        if (!event.detail.value.length) return;
+        this._parserData = event.detail.value[0];
       }
+
     });
+
   </script>
 </dom-module>
