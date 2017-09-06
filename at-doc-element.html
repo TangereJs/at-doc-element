@@ -6,7 +6,10 @@
 <link rel="import" href="../at-carbon-message/at-carbon-message.html" />
 <link rel="import" href="../at-core-markdown/at-core-markdown.html">
 
-<link rel="import" href="../at-doc-demo/at-doc-demo.html">
+<link rel="import" href="../at-core-propform/at-core-propform.html" />
+<link rel="import" href="../at-core-splitter/at-core-splitter.html" />
+<link rel="import" href="../at-form-codemirror/at-form-codemirror.html" />
+
 <link rel="import" href="../at-core-activity/at-core-activity.html">
 
 <dom-module id="at-doc-element">
@@ -35,9 +38,31 @@
         box-sizing: border-box;
       }
 
-      at-doc-demo {
+      .playground-container {
+        box-sizing: border-box;
+        @apply(--layout-horizontal);
+      }
+
+      .playground-left-column {
+        @apply(--layout-flex);
+        box-sizing: border-box;
+      }
+
+      .playground-right-column {
         display: block;
         box-sizing: border-box;
+        width: 50%;
+        padding: 8px;
+
+        @apply(--layout-vertical);
+      }
+
+      .playground-live-render {
+        @apply(--layout-flex);
+      }
+
+      .playground-html-markup {
+        display: block;
       }
 
       .section {
@@ -138,7 +163,16 @@
     <div class="row">
       <at-core-spinner id="playgroundSpinner"></at-core-spinner>
       <at-carbon-message id="playgroundMessage" type="info"></at-carbon-message>
-      <at-doc-demo id="atDocDemo" url=[[url]]></at-doc-demo>
+      <div id="playgroundContainer" class="playground-container" hidden>
+        <div class="playground-left-column">
+          <at-core-propform id="playgroundPropForm"></at-core-propform>
+        </div>
+        <at-core-splitter id="playgroundSplitter" direction="right"></at-core-splitter>
+        <div class="playground-right-column">
+          <div id="playgroundLiveRender" class="playground-live-render"></div>
+          <at-form-codemirror id="playgroundHtmlMarkup" readonly class="playground-html-markup"></at-form-codemirror>
+        </div>
+      </div>
     </div>
 
     <div class="row">
@@ -303,12 +337,12 @@
 
       ready: function() {
 
-        this._downloadReadmeFile();
+        // this._downloadReadmeFile();
 
         var self = this;
-        // reset resize sensor for at-doc-demo
-        this.$.atDocDemo.$.coreForm.$.propForm.addEventListener('rendered', function() {
-          self.$.atDocDemo.resetResizeSensor();
+        // reset resize sensor for playground prop form
+        this.$.playgroundPropForm.$.propForm.addEventListener('rendered', function() {
+          self.$.playgroundPropForm.resetResizeSensor();
         });
       },
 
@@ -384,7 +418,6 @@
               elementHref = '../' + result;
             }
             // end of #761 handle
-            // debugger;
           } else {
             var url = window.location.href;
             if (url.indexOf("index.html") !== -1) {
@@ -398,7 +431,6 @@
           elementName = componentName || namePart;
         
           this.$.docParser.url = elementHref;
-          this.$.atDocDemo.url = elementHref;
 
         } else if (url !== "") {
           var nameParts = url.split("/");
@@ -451,11 +483,120 @@
         
         if (playground) {
           this.$.playgroundSpinner.display = "none";
+          this.$.playgroundContainer.removeAttribute('hidden');
+
+          var elementInstance = document.createElement(registration.is);
+          this.$.playgroundPropForm.elementInstance = elementInstance;
+          Polymer.dom(this.$.playgroundLiveRender).appendChild(elementInstance);
+
+          var self = this;
+          // do the initial render
+          var elementHtmlString = this._renderElementHtmlString(registration, {});
+          this.$.playgroundHtmlMarkup.value = elementHtmlString;
+
+          this.$.playgroundPropForm.addEventListener('value-changed', function(event){ 
+            // update the render
+            var elementHtmlString = self._renderElementHtmlString(registration, event.detail.value);
+            self.$.playgroundHtmlMarkup.value = elementHtmlString;
+          });
+
         } else {
-          Polymer.dom(this.$.atDocDemo).setAttribute('hidden', 'true');
           this.$.playgroundSpinner.display = "none";
           this.$.playgroundMessage.html = "Playground is disabled for this element.";
         }
+      },
+
+      _renderElementHtmlString: function(registration, propertyValues) {
+        var parts = [];
+
+        var attributesString = this._buildAttributesString(registration, propertyValues);
+
+        parts.push(this._createOpenTagStr(registration.is, attributesString));
+        parts.push(this._createClosedTagStr(registration.is));
+        return parts.join("");
+      },
+
+      _createOpenTagStr: function(elementName, attributesString) {
+        if (attributesString) {
+          return '<' + elementName + ' '+ attributesString +'>';
+        }
+        return '<' + elementName + '>';
+      },
+
+      _createClosedTagStr: function(elementName) {
+        return "</" + elementName + ">";
+      },
+
+      _buildAttributesString: function(registration, propertyValues) {
+        var parts = [];
+        var propertyNames = Object.keys(propertyValues);
+        var self = this;
+        propertyNames.forEach(function(propertyName){ 
+          var propValue = propertyValues[propertyName];
+          
+          var propDef = self._getPropertyDefinition(registration, propertyName);
+          var propType = self._getPropertyType(propDef);
+
+          var attrName = Polymer.CaseMap.camelToDashCase(propertyName);
+          if (propValue !== propDef.value) {
+            if (propType === "boolean") {
+              parts.push(attrName);
+            } else {
+              var attrStr = attrName + '="' + propValue + '"';
+              parts.push(attrStr);
+            }
+          }
+        });
+
+        return parts.join(" ");
+      },
+
+      _getPropertyDefinition: function(registration, propertyName) {
+        if (!this.__propertyCache) {
+          var self = this;
+          this.__propertyCache = {};
+          this._copyProperties(registration.properties, this.__propertyCache);
+          if (registration.behaviors && registration.behaviors.length) {
+            registration.behaviors.forEach(function(behavior) {
+              if (!behavior.properties) return;
+              self._copyProperties(behavior.properties, self.__propertyCache);
+            });
+          }
+        }
+
+        var propDef = this.__propertyCache[propertyName];
+        return propDef;
+      },
+
+      _getPropertyType: function(propDef) {
+        function isString(obj) {
+          return Object.prototype.toString.apply(obj) === "[object String]";
+        }
+        function isFunction(obj) {
+          return Object.prototype.toString.apply(obj) === "[object Function]";
+        }
+
+        function isArray(obj) {
+          return Object.prototype.toString.apply(obj) === "[object Array]";
+        }
+
+        if (isString(propDef.type)) return propDef.type;
+        if (!isFunction(propDef.type)) return 'string';
+
+        var fVal = propDef.type();
+        if (isArray(fVal)) return 'array';
+        var fValType = typeof fVal;
+        return fValType;
+      },
+
+      // s is source object
+      // d is destination object
+      _copyProperties: function(s, d) {
+        var r = Object.keys(s);
+        r.forEach(function(p){ 
+          if (["valid"].indexOf(p) > -1) return;
+          d[p] = s[p];
+        });
       },
 
       _handleDocParserValueChanged: function(event) {
