@@ -533,7 +533,10 @@
         var self = this;
         propertyNames.forEach(function(propertyName){ 
           var propValue = propertyValues[propertyName];
-          
+    
+          // escape string values
+          if (typeof propValue === "string") propValue = escape(propValue);
+
           var propDef = self._getPropertyDefinition(registration, propertyName);
           var propType = self._getPropertyType(propDef);
 
