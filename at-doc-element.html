@@ -307,6 +307,19 @@
         },
 
         /**
+         * When true, readme file for the element will be downloaded and displayed
+         * 
+         * @property readme
+         * @type Boolean
+         * @default false
+         */
+        readme: {
+          type: Boolean,
+          value : false,
+          observer: '_readmeChanged'
+        },
+
+        /**
          * Holds the data from the parser
          * 
          * @property _parserData
@@ -336,14 +349,22 @@
       },
 
       ready: function() {
-
-        this._downloadReadmeFile();
-
         var self = this;
         // reset resize sensor for playground prop form
         this.$.playgroundPropForm.$.propForm.addEventListener('rendered', function() {
           self.$.playgroundPropForm.resetResizeSensor();
         });
+      },
+
+      _readmeChanged: function(newValue, oldValue) {
+        if (newValue) {
+          this._downloadReadmeFile();
+        
+        } else {
+          this.$.readmeSpinner.display = 'none';
+          this.$.readmeMessage.html = '';
+          this.$.markdownReadme.text = '';
+        }
       },
 
       _downloadReadmeFile: function() {
