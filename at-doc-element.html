@@ -150,7 +150,7 @@
 
     </style>
 
-    <at-doc-parser id="docParser" url="[[url]]" on-value-changed="_handleDocParserValueChanged"></at-doc-parser>
+    <at-doc-parser id="docParser" url="[[_resolveUrl(url)]]" on-value-changed="_handleDocParserValueChanged"></at-doc-parser>
 
     <div class="row">
       <at-core-spinner id="readmeSpinner"></at-core-spinner>
@@ -344,7 +344,11 @@
         result = result.join(", ");
         return result;
       },
-
+      _resolveUrl: function(u) 
+      { 
+        if(u.indexOf("../")==0) u = this.resolveUrl(u);
+        return u;
+      },
       ready: function() {
         var self = this;
         // reset resize sensor for playground prop form
@@ -404,8 +408,9 @@
 
       _importElementFromUrl: function(url, auto) {
         var elementName;
-        var elementHref = url;
-        
+        if(url.indexOf("../")==0) url = this.resolveUrl(url);
+        var elementHref = url;       
+         
         if (auto && url === '') {
           // autogenerate the url
           // #761 at-doc-element?element=a-b
