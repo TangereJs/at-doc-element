@@ -268,7 +268,7 @@
       </template>
     </div>
 
-    <div class="row">
+    <div class="row" hidden$="[[_computeDescriptionHidden(_parserData.description)]]">
       <label class="header-label">{{_parserData.name}}</label>
       <at-core-markdown text="{{_parserData.description}}"></at-core-markdown>
     </div>
@@ -344,6 +344,10 @@
         });
         result = result.join(", ");
         return result;
+      },
+
+      _computeDescriptionHidden: function(desc) {
+        return !desc;
       },
 
       ready: function() {
