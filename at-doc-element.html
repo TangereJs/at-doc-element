@@ -282,8 +282,8 @@
       properties: {
 
         /**
-         * Url to fetch the element from. Details for specified element will be displayed 
-         * 
+         * Url to fetch the element from. Details for specified element will be displayed
+         *
          * @property url
          * @type String
          * @default  ''
@@ -295,7 +295,7 @@
 
         /**
          * When true, url will be automatically generated
-         * 
+         *
          * @property auto
          * @type Boolean
          * @default  false
@@ -307,7 +307,7 @@
 
         /**
          * When true, readme file for the element will be downloaded and displayed
-         * 
+         *
          * @property readme
          * @type Boolean
          * @default false
@@ -320,10 +320,10 @@
 
         /**
          * Holds the data from the parser
-         * 
+         *
          * @property _parserData
          * @type Object
-         * @default {} 
+         * @default {}
          */
         _parserData: {
           type: Object,
@@ -346,8 +346,8 @@
         result = result.join(", ");
         return result;
       },
-      _resolveUrl: function(u) 
-      { 
+      _resolveUrl: function(u)
+      {
         if(u.indexOf("../")==0) u = this.resolveUrl(u);
         return u;
       },
@@ -362,7 +362,7 @@
       _readmeChanged: function(newValue, oldValue) {
         if (newValue) {
           this._downloadReadmeFile();
-        
+
         } else {
           this.$.readmeSpinner.display = 'none';
           this.$.readmeMessage.html = '';
@@ -372,12 +372,12 @@
 
       _downloadReadmeFile: function() {
         var self = this;
-        
+
         var pathParts = window.location.pathname.split("/");
         pathParts[pathParts.length - 1] = "README.md";
         var path = pathParts.join("/");
         var readmeDownloadUrl = [window.location.origin, path].join("");
-        
+
         if (this.url !== "") {
           var urlParts = this.url.split("/");
           urlParts[urlParts.length - 1] = "README.md";
@@ -387,7 +387,7 @@
         var markdownReadme = self.$.markdownReadme;
         var readmeDownloadLink = document.createElement('at-core-activity');
         readmeDownloadLink.handleAs = "text";
-        
+
         readmeDownloadLink.addEventListener('response', function(event) {
           var httpStatus = event.currentTarget.activeRequests[0].xhr.status;
           if (httpStatus === 404) {
@@ -399,11 +399,11 @@
           markdownReadme.text = value;
           self.$.readmeSpinner.display = 'none';
         });
-        
+
         readmeDownloadLink.addEventListener('error', function(event) {
           console.log(event.detail);
         });
-        
+
         readmeDownloadLink.url = readmeDownloadUrl;
         readmeDownloadLink.generateRequest();
       },
@@ -411,8 +411,8 @@
       _importElementFromUrl: function(url, auto) {
         var elementName;
         if(url.indexOf("../")==0) url = this.resolveUrl(url);
-        var elementHref = url;       
-         
+        var elementHref = url;
+
         if (auto && url === '') {
           // autogenerate the url
           // #761 at-doc-element?element=a-b
@@ -424,14 +424,14 @@
             var i;
             var len = paramsParts.length;
             var paramPart;
-            
+
             for (i = 0; i < len; i++) {
               paramPart = paramsParts[i];
               if (paramPart.startsWith('element=')) {
                 break;
               }
             }
-            
+
             if (paramPart.indexOf('=') !== -1) {
               var namePart = paramPart.split('=')[1];
               var result = '';
@@ -454,7 +454,7 @@
             }
           }
           elementName = componentName || namePart;
-        
+
           this.$.docParser.url = elementHref;
 
         } else if (url !== "") {
@@ -487,7 +487,7 @@
         var registration;
         var registrations = Polymer.telemetry.registrations;
         var registrationsLength = registrations.length;
-        
+
         for (var i = 0; i < registrationsLength; i++) {
           registration = registrations[i];
           if (registration.is === elementName) return registration;
@@ -498,14 +498,14 @@
 
       _processImportedElement: function(registration) {
         var playground = true;
-        
+
         if (registration.$meta && registration.$meta.length > 0) {
           var metaEntry = registration.$meta[0];
           if (metaEntry.hasOwnProperty('playground')) {
             playground = Boolean(metaEntry.playground);
           }
         }
-        
+
         if (playground) {
           this.$.playgroundSpinner.display = "none";
           this.$.playgroundContainer.removeAttribute('hidden');
@@ -519,7 +519,7 @@
           var elementHtmlString = this._renderElementHtmlString(registration, {});
           this.$.playgroundHtmlMarkup.value = elementHtmlString;
 
-          this.$.playgroundPropForm.addEventListener('value-changed', function(event){ 
+          this.$.playgroundPropForm.addEventListener('value-changed', function(event){
             // update the render
             var elementHtmlString = self._renderElementHtmlString(registration, event.detail.value);
             self.$.playgroundHtmlMarkup.value = elementHtmlString;
@@ -556,9 +556,9 @@
         var parts = [];
         var propertyNames = Object.keys(propertyValues);
         var self = this;
-        propertyNames.forEach(function(propertyName){ 
+        propertyNames.forEach(function(propertyName){
           var propValue = propertyValues[propertyName];
-    
+
           // escape string values
           if (typeof propValue === "string") propValue = escape(propValue);
 
@@ -621,7 +621,7 @@
       // d is destination object
       _copyProperties: function(s, d) {
         var r = Object.keys(s);
-        r.forEach(function(p){ 
+        r.forEach(function(p){
           if (["valid"].indexOf(p) > -1) return;
           d[p] = s[p];
         });
